@@ -20,13 +20,16 @@ export function RegisterForm({ onSwitchToLogin, onRegisterSuccess }) {
     setSuccessMessage('');
 
     // Validations
-    if (!name.trim() || !email.trim() || !password || !confirmPassword) {
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
+
+    if (!cleanName || !cleanEmail || !password || !confirmPassword) {
       setErrorMessage('Por favor, preencha todos os campos.');
       return;
     }
 
-    if (password.length < 9) {
-      setErrorMessage('A senha deve ter no mínimo 9 caracteres.');
+    if (password.length < 8) {
+      setErrorMessage('A senha deve ter no mínimo 8 caracteres.');
       return;
     }
 
@@ -40,15 +43,32 @@ export function RegisterForm({ onSwitchToLogin, onRegisterSuccess }) {
     try {
       // Call Neon Auth sign up method
       const { data, error } = await authClient.signUp.email({
-        email: email.trim(),
+        email: cleanEmail,
         password: password,
-        name: name.trim()
+        name: cleanName
       });
 
       if (error) {
         console.error('Register error response:', error);
-        if (error.message?.toLowerCase().includes('already exists') || error.code === 'USER_ALREADY_EXISTS') {
+        const errMsg = (error.message || '').toLowerCase();
+        const errCode = (error.code || '').toUpperCase();
+
+        if (
+          errCode.includes('ALREADY_EXISTS') ||
+          errMsg.includes('already exists') ||
+          errMsg.includes('use another email')
+        ) {
           setErrorMessage('Este e-mail já está cadastrado. Tente fazer login.');
+        } else if (
+          errCode === 'PASSWORD_TOO_SHORT' ||
+          errMsg.includes('password too short')
+        ) {
+          setErrorMessage('A senha deve ter no mínimo 8 caracteres.');
+        } else if (
+          errCode.includes('INVALID_EMAIL') ||
+          errMsg.includes('invalid email')
+        ) {
+          setErrorMessage('Por favor, informe um e-mail válido.');
         } else if (error.message) {
           setErrorMessage(error.message);
         } else {
@@ -59,14 +79,18 @@ export function RegisterForm({ onSwitchToLogin, onRegisterSuccess }) {
       }
 
       // Sincronizar na tabela nutricionistas do Neon
-      await syncNutricionista({
-        nome: name.trim(),
-        email: email.trim()
-      });
+      try {
+        await syncNutricionista({
+          nome: cleanName,
+          email: cleanEmail
+        });
+      } catch (syncErr) {
+        console.warn('Sync table warning:', syncErr);
+      }
 
       const user = data?.user || {
-        name: name.trim(),
-        email: email.trim()
+        name: cleanName,
+        email: cleanEmail
       };
 
       setSuccessMessage('Conta criada com sucesso! Redirecionando...');
@@ -77,7 +101,7 @@ export function RegisterForm({ onSwitchToLogin, onRegisterSuccess }) {
       }, 1000);
     } catch (err) {
       console.error('Unhandled register error:', err);
-      setErrorMessage('Erro ao se conectar com o servidor. Tente novamente.');
+      setErrorMessage('Erro ao se conectar com o servidor. Verifique sua conexão e tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -147,7 +171,7 @@ export function RegisterForm({ onSwitchToLogin, onRegisterSuccess }) {
               id="register-password"
               type={showPassword ? 'text' : 'password'}
               className="form-input"
-              placeholder="No mínimo 9 caracteres"
+              placeholder="No mínimo 8 caracteres"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
@@ -164,7 +188,7 @@ export function RegisterForm({ onSwitchToLogin, onRegisterSuccess }) {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-          <span className="form-helper">No mínimo 9 caracteres</span>
+          <span className="form-helper">No mínimo 8 caracteres</span>
         </div>
 
         <div className="form-group">

@@ -15,13 +15,10 @@ export function LoginForm({ onSwitchToRegister, onLoginSuccess }) {
     setErrorMessage('');
 
     // Validations
-    if (!email.trim() || !password) {
-      setErrorMessage('Por favor, preencha todos os campos.');
-      return;
-    }
+    const cleanEmail = email.trim().toLowerCase();
 
-    if (password.length < 9) {
-      setErrorMessage('A senha deve ter no mínimo 9 caracteres.');
+    if (!cleanEmail || !password) {
+      setErrorMessage('Por favor, preencha todos os campos.');
       return;
     }
 
@@ -30,14 +27,27 @@ export function LoginForm({ onSwitchToRegister, onLoginSuccess }) {
     try {
       // Call Neon Auth sign in method
       const { data, error } = await authClient.signIn.email({
-        email: email.trim(),
+        email: cleanEmail,
         password: password
       });
 
       if (error) {
         console.error('Login error response:', error);
-        if (error.status === 401 || error.code === 'INVALID_EMAIL_OR_PASSWORD' || error.message?.toLowerCase().includes('invalid')) {
+        const errMsg = (error.message || '').toLowerCase();
+        const errCode = (error.code || '').toUpperCase();
+
+        if (
+          error.status === 401 ||
+          errCode.includes('INVALID') ||
+          errMsg.includes('invalid') ||
+          errMsg.includes('credentials')
+        ) {
           setErrorMessage('E-mail ou senha incorretos. Por favor, verifique suas credenciais.');
+        } else if (
+          errCode.includes('USER_NOT_FOUND') ||
+          errMsg.includes('not found')
+        ) {
+          setErrorMessage('Conta não encontrada. Verifique o e-mail digitado ou cadastre-se.');
         } else if (error.message) {
           setErrorMessage(error.message);
         } else {
@@ -49,15 +59,19 @@ export function LoginForm({ onSwitchToRegister, onLoginSuccess }) {
 
       // Successful login
       const user = data?.user || {
-        email: email.trim(),
-        name: data?.user?.name || email.split('@')[0]
+        email: cleanEmail,
+        name: data?.user?.name || cleanEmail.split('@')[0]
       };
 
       // Sync nutritionist data with Neon database table
-      await syncNutricionista({
-        nome: user.name || email.split('@')[0],
-        email: user.email
-      });
+      try {
+        await syncNutricionista({
+          nome: user.name || cleanEmail.split('@')[0],
+          email: user.email
+        });
+      } catch (syncErr) {
+        console.warn('Sync table warning:', syncErr);
+      }
 
       // Save local session
       saveLocalSession(user);
@@ -67,7 +81,7 @@ export function LoginForm({ onSwitchToRegister, onLoginSuccess }) {
     } catch (err) {
       console.error('Unhandled login error:', err);
       // Fallback mode if network error or Neon Auth unreachable
-      setErrorMessage('Ocorreu um erro ao se conectar com o servidor. Tente novamente em instantes.');
+      setErrorMessage('Ocorreu um erro ao se conectar com o servidor. Verifique sua conexão e tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -129,7 +143,6 @@ export function LoginForm({ onSwitchToRegister, onLoginSuccess }) {
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
-          <span className="form-helper">Mínimo de 9 caracteres</span>
         </div>
 
         <button
