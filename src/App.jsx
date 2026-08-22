@@ -3,6 +3,7 @@ import { HeaderLogo } from './components/HeaderLogo';
 import { LoginForm } from './components/LoginForm';
 import { RegisterForm } from './components/RegisterForm';
 import { Dashboard } from './components/Dashboard';
+import { InstallPWA } from './components/InstallPWA';
 import { getLocalSession } from './lib/auth';
 
 export function App() {
@@ -43,11 +44,17 @@ export function App() {
 
   // If user is already logged in, redirect directly to dashboard
   if (currentUser) {
-    return <Dashboard user={currentUser} onLogout={handleLogout} />;
+    return (
+      <>
+        <InstallPWA />
+        <Dashboard user={currentUser} onLogout={handleLogout} />
+      </>
+    );
   }
 
   return (
     <div className="auth-page">
+      <InstallPWA />
       <div className="auth-bg-blob-1" />
       <div className="auth-bg-blob-2" />
 

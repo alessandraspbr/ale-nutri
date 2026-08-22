@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a7f3d0"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#064e3b" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background with rounded corners -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)" filter="url(#shadow)"/>
+
+  <!-- Subtle organic background ring -->
+  <circle cx="256" cy="256" r="180" fill="none" stroke="rgba(255, 255, 255, 0.12)" stroke-width="16" stroke-dasharray="12 12"/>
+
+  <!-- Brand Typography: AL -->
+  <text x="256" y="315" font-family="'Plus Jakarta Sans', system-ui, -apple-system, sans-serif" font-size="195" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="-6">AL</text>
+
+  <!-- Nutrition Leaf Accent -->
+  <path d="M 330 145 C 375 145 385 190 385 190 C 385 190 340 200 295 200 C 295 155 330 145 330 145 Z" fill="url(#leafGrad)"/>
+  <path d="M 330 145 Q 350 175 385 190" stroke="#065f46" stroke-width="4" fill="none" stroke-linecap="round"/>
+</svg>
